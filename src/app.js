@@ -2,6 +2,39 @@ import express from "express";
 
 const app = express();
 
+const logger = (req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+};
+
+// middleware to validate id
+const validateId = (req, res, next) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ message: "id khong hop le!" });
+  }
+
+  req.todoId = id;
+  next();
+};
+
+// middleware validate title and description
+const validateTodoBody = (req, res, next) => {
+  const { title, description } = req.body;
+
+  if (typeof title !== "string" || title.trim() === "") {
+    return res.status(400).json({ message: "title khong duoc rong!" });
+  }
+
+  if (description !== undefined && description !== "string") {
+    return res.status(400).json({ message: "description phai la chuoi!" });
+  }
+
+  next();
+};
+
+// example todos
 const todos = [
   {
     id: 1,
@@ -17,8 +50,11 @@ const todos = [
   },
 ];
 
-// Cho phep server doc JSON tu request body
+// allow server to read json from req body
 app.use(express.json());
+
+// register logger middleware
+app.use(logger);
 
 // API kiem tra server
 app.get("/", (req, res) => {
@@ -59,7 +95,7 @@ app.post("/todos", (req, res) => {
     completed: false,
   };
   todos.push(newTodo);
-  res.status(201).json("Da tao todo moi", newTodo);
+  res.status(201).json({ message: "Da tao todo moi", newTodo });
 });
 
 app.put("/todos/:id", (req, res) => {
